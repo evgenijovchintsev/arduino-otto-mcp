@@ -1,0 +1,15 @@
+services:
+  otto-api:
+    build: .
+    container_name: otto-api
+    restart: unless-stopped
+    # host network makes the host BlueZ adapter visible inside the container;
+    # the API is reachable at http://localhost:8000 on the host directly.
+    network_mode: host
+    # bleak on Linux talks to BlueZ via D-Bus — share the host socket
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+    # Required capabilities for BLE via BlueZ
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW

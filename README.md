@@ -26,6 +26,40 @@ docker compose up -d --build
 docker compose logs -f otto-api
 ```
 
+## Подключение MCP-клиентов
+
+Сервер реализует протокол [MCP](https://modelcontextprotocol.io) поверх REST API — LLM может управлять роботом напрямую через инструменты.
+
+MCP-эндпоинт: `http://localhost:8000/mcp`
+
+### Claude Desktop
+
+Добавьте в `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "otto": {
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add otto http://localhost:8000/mcp
+```
+
+После подключения LLM получает три инструмента:
+
+| Инструмент     | Описание                                      |
+|----------------|-----------------------------------------------|
+| `get_status`   | Проверить статус Bluetooth-соединения         |
+| `send_command` | Отправить команду роботу (forward/back/…)     |
+| `list_commands`| Получить список доступных команд             |
+
 ## API
 
 ### Статус соединения

@@ -11,6 +11,7 @@ from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 from fastapi import FastAPI, HTTPException
+from fastapi_mcp import FastApiMCP
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -130,6 +131,7 @@ app = FastAPI(
 
 @app.get(
     "/status",
+    operation_id="get_status",
     responses={
         200: {
             "content": {
@@ -174,6 +176,7 @@ async def status():
 
 @app.post(
     "/command/{name}",
+    operation_id="send_command",
     responses={
         200: {
             "content": {
@@ -233,6 +236,7 @@ async def command(name: str):
 
 @app.get(
     "/commands",
+    operation_id="list_commands",
     responses={
         200: {
             "content": {
@@ -261,3 +265,7 @@ async def list_commands():
     ```
     """
     return {"commands": {name: f"Sends '{char}'" for name, char in COMMANDS.items()}}
+
+
+mcp = FastApiMCP(app)
+mcp.mount()

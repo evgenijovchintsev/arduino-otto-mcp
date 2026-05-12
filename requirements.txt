@@ -1,3 +1,4 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 bleak>=0.22.0
+fastapi-mcp>=0.3.0

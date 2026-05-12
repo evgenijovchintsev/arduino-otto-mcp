@@ -113,15 +113,58 @@ app = FastAPI(
     title="OTTO Robot BLE API",
     description=(
         f"Controls OTTO robot via Bluetooth HM-10 module. "
-        f"Automatically connects to '{DEVICE_NAME}' on startup."
+        f"Automatically connects to `{DEVICE_NAME}` on startup.\n\n"
+        "## Quick start\n\n"
+        "Check connection status:\n"
+        "```bash\n"
+        "curl http://localhost:8000/status\n"
+        "```\n\n"
+        "Send a command:\n"
+        "```bash\n"
+        "curl -X POST http://localhost:8000/command/forward\n"
+        "```"
     ),
     lifespan=lifespan,
 )
 
 
-@app.get("/status")
+@app.get(
+    "/status",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "connected": {
+                            "summary": "Device connected",
+                            "value": {
+                                "connected": True,
+                                "device": "HMSoft",
+                                "device_address": "AA:BB:CC:DD:EE:FF",
+                            },
+                        },
+                        "connecting": {
+                            "summary": "Still scanning / connecting",
+                            "value": {
+                                "connected": False,
+                                "device": "HMSoft",
+                                "device_address": None,
+                            },
+                        },
+                    }
+                }
+            }
+        }
+    },
+)
 async def status():
-    """Connection status and device address."""
+    """
+    Connection status and device address.
+
+    ```bash
+    curl http://localhost:8000/status
+    ```
+    """
     return {
         "connected": ble.is_connected,
         "device": DEVICE_NAME,
@@ -129,12 +172,54 @@ async def status():
     }
 
 
-@app.post("/command/{name}")
+@app.post(
+    "/command/{name}",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {"command": "forward", "sent": "F"},
+                }
+            }
+        },
+        404: {
+            "description": "Unknown command name",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Unknown command 'fly'. Available: ['forward', 'back', 'left', 'right', 'tiptoe', 'stop']"
+                    }
+                }
+            },
+        },
+        503: {
+            "description": "Not yet connected to HMSoft",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Not connected to 'HMSoft' yet, please wait"}
+                }
+            },
+        },
+    },
+)
 async def command(name: str):
     """
     Send a named command to OTTO.
 
-    Available commands: forward, back, left, right, tiptoe, stop
+    | Command   | Byte | Action           |
+    |-----------|------|------------------|
+    | `forward` | `F`  | Walk forward     |
+    | `back`    | `B`  | Walk backward    |
+    | `left`    | `L`  | Turn left        |
+    | `right`   | `R`  | Turn right       |
+    | `tiptoe`  | `T`  | Tiptoe swing     |
+    | `stop`    | `S`  | Return to home   |
+
+    ```bash
+    curl -X POST http://localhost:8000/command/forward
+    curl -X POST http://localhost:8000/command/left
+    curl -X POST http://localhost:8000/command/stop
+    ```
     """
     char = COMMANDS.get(name)
     if char is None:
@@ -146,7 +231,33 @@ async def command(name: str):
     return {"command": name, "sent": char}
 
 
-@app.get("/commands")
+@app.get(
+    "/commands",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "commands": {
+                            "forward": "Sends 'F'",
+                            "back": "Sends 'B'",
+                            "left": "Sends 'L'",
+                            "right": "Sends 'R'",
+                            "tiptoe": "Sends 'T'",
+                            "stop": "Sends 'S'",
+                        }
+                    }
+                }
+            }
+        }
+    },
+)
 async def list_commands():
-    """List all available commands."""
+    """
+    List all available commands.
+
+    ```bash
+    curl http://localhost:8000/commands
+    ```
+    """
     return {"commands": {name: f"Sends '{char}'" for name, char in COMMANDS.items()}}

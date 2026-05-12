@@ -35,6 +35,7 @@ class BLEConnection:
     def __init__(self) -> None:
         self.client: Optional[BleakClient] = None
         self.device_address: Optional[str] = None
+        self._write_with_response: bool = False
         self._lock = asyncio.Lock()
         self._task: Optional[asyncio.Task] = None
 
@@ -58,9 +59,28 @@ class BLEConnection:
                     log.info("Connecting to %s (%s)...", device.name, device.address)
                     client = BleakClient(device)
                     await client.connect()
+
+                    # Discover the TX characteristic and pick the correct write mode
+                    tx_char = client.services.get_characteristic(HM10_CHAR_UUID)
+                    if tx_char is None:
+                        log.error("Characteristic %s not found. Available:", HM10_CHAR_UUID)
+                        for svc in client.services:
+                            for c in svc.characteristics:
+                                log.error("  %s  props=%s", c.uuid, c.properties)
+                        await client.disconnect()
+                        await asyncio.sleep(RECONNECT_DELAY)
+                        continue
+
+                    write_with_response = "write" in tx_char.properties
+                    log.info(
+                        "TX char %s  props=%s  → response=%s",
+                        tx_char.uuid, tx_char.properties, write_with_response,
+                    )
+
                     async with self._lock:
                         self.client = client
                         self.device_address = device.address
+                        self._write_with_response = write_with_response
                     log.info("Connected to %s", device.address)
 
                 await asyncio.sleep(2.0)
@@ -95,9 +115,13 @@ class BLEConnection:
                     status_code=503,
                     detail=f"Not connected to '{DEVICE_NAME}' yet, please wait",
                 )
-            await self.client.write_gatt_char(
-                HM10_CHAR_UUID, char.encode("ascii"), response=False
-            )
+            data = char.encode("ascii")
+            log.info("Sending 0x%s ('%s')  response=%s", data.hex().upper(), char, self._write_with_response)
+            try:
+                await self.client.write_gatt_char(HM10_CHAR_UUID, data, response=self._write_with_response)
+            except Exception as exc:
+                log.error("Write failed: %s", exc)
+                raise HTTPException(status_code=502, detail=f"BLE write error: {exc}") from exc
 
 
 ble = BLEConnection()

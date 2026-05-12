@@ -13,13 +13,15 @@ FastAPI сервер для управления роботом OTTO через 
 ## Запуск
 
 ```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
 При старте сервер автоматически сканирует и подключается к устройству `HMSoft`. Swagger UI доступен на [http://localhost:8000/docs](http://localhost:8000/docs).
 
-## Запуск через Docker (Linux)
+## Запуск через Docker (Linux, на OSX работать не будет!)
 
 ```bash
 docker compose up -d --build

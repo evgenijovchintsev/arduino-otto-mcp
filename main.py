@@ -122,7 +122,7 @@ app = FastAPI(
         "```\n\n"
         "Send a command:\n"
         "```bash\n"
-        "curl -X POST http://localhost:8000/command/forward\n"
+        "curl -X POST http://localhost:8000/forward\n"
         "```"
     ),
     lifespan=lifespan,
@@ -174,64 +174,58 @@ async def status():
     }
 
 
-@app.post(
-    "/command/{name}",
-    operation_id="send_command",
-    responses={
-        200: {
-            "content": {
-                "application/json": {
-                    "example": {"command": "forward", "sent": "F"},
-                }
+_503 = {
+    503: {
+        "description": "Not yet connected to HMSoft",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not connected to 'HMSoft' yet, please wait"}
             }
         },
-        404: {
-            "description": "Unknown command name",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Unknown command 'fly'. Available: ['forward', 'back', 'left', 'right', 'tiptoe', 'stop']"
-                    }
-                }
-            },
-        },
-        503: {
-            "description": "Not yet connected to HMSoft",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Not connected to 'HMSoft' yet, please wait"}
-                }
-            },
-        },
-    },
-)
-async def command(name: str):
-    """
-    Send a named command to OTTO.
+    }
+}
 
-    | Command   | Byte | Action           |
-    |-----------|------|------------------|
-    | `forward` | `F`  | Walk forward     |
-    | `back`    | `B`  | Walk backward    |
-    | `left`    | `L`  | Turn left        |
-    | `right`   | `R`  | Turn right       |
-    | `tiptoe`  | `T`  | Tiptoe swing     |
-    | `stop`    | `S`  | Return to home   |
 
-    ```bash
-    curl -X POST http://localhost:8000/command/forward
-    curl -X POST http://localhost:8000/command/left
-    curl -X POST http://localhost:8000/command/stop
-    ```
-    """
-    char = COMMANDS.get(name)
-    if char is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Unknown command '{name}'. Available: {list(COMMANDS)}",
-        )
-    await ble.send(char)
-    return {"command": name, "sent": char}
+@app.post("/forward", operation_id="forward", tags=["Move"], responses=_503)
+async def forward():
+    """Make OTTO walk one step forward."""
+    await ble.send("F")
+    return {"command": "forward", "sent": "F"}
+
+
+@app.post("/back", operation_id="back", tags=["Move"], responses=_503)
+async def back():
+    """Make OTTO walk one step backward."""
+    await ble.send("B")
+    return {"command": "back", "sent": "B"}
+
+
+@app.post("/left", operation_id="left", tags=["Move"], responses=_503)
+async def left():
+    """Make OTTO turn left."""
+    await ble.send("L")
+    return {"command": "left", "sent": "L"}
+
+
+@app.post("/right", operation_id="right", tags=["Move"], responses=_503)
+async def right():
+    """Make OTTO turn right."""
+    await ble.send("R")
+    return {"command": "right", "sent": "R"}
+
+
+@app.post("/tiptoe", operation_id="tiptoe", tags=["Move"], responses=_503)
+async def tiptoe():
+    """Make OTTO do a tiptoe swing dance move."""
+    await ble.send("T")
+    return {"command": "tiptoe", "sent": "T"}
+
+
+@app.post("/stop", operation_id="stop", tags=["Move"], responses=_503)
+async def stop():
+    """Stop OTTO and return to home position."""
+    await ble.send("S")
+    return {"command": "stop", "sent": "S"}
 
 
 @app.get(
@@ -267,5 +261,8 @@ async def list_commands():
     return {"commands": {name: f"Sends '{char}'" for name, char in COMMANDS.items()}}
 
 
-mcp = FastApiMCP(app)
+mcp = FastApiMCP(
+    app,
+    include_operations=["get_status", "forward", "back", "left", "right", "tiptoe", "stop"],
+)
 mcp.mount()

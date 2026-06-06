@@ -142,11 +142,11 @@ app = FastAPI(
         "## Quick start\n\n"
         "Check connection status:\n"
         "```bash\n"
-        "curl http://localhost:8000/status\n"
+        "curl http://localhost:8090/status\n"
         "```\n\n"
         "Send a command:\n"
         "```bash\n"
-        "curl -X POST http://localhost:8000/forward\n"
+        "curl -X POST http://localhost:8090/forward\n"
         "```"
     ),
     lifespan=lifespan,
@@ -188,7 +188,7 @@ async def status():
     Connection status and device address.
 
     ```bash
-    curl http://localhost:8000/status
+    curl http://localhost:8090/status
     ```
     """
     return {
@@ -279,7 +279,7 @@ async def list_commands():
     List all available commands.
 
     ```bash
-    curl http://localhost:8000/commands
+    curl http://localhost:8090/commands
     ```
     """
     return {"commands": {name: f"Sends '{char}'" for name, char in COMMANDS.items()}}

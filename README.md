@@ -19,7 +19,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-При старте сервер автоматически сканирует и подключается к устройству `HMSoft`. Swagger UI доступен на [http://localhost:8000/docs](http://localhost:8000/docs).
+При старте сервер автоматически сканирует и подключается к устройству `HMSoft`. Swagger UI доступен на [http://localhost:8090/docs](http://localhost:8090/docs).
 
 ## Запуск через Docker (Linux, на OSX работать не будет!)
 
@@ -32,7 +32,7 @@ docker compose logs -f otto-api
 
 Сервер реализует протокол [MCP](https://modelcontextprotocol.io) поверх REST API — LLM может управлять роботом напрямую через инструменты.
 
-MCP-эндпоинт: `http://localhost:8000/mcp`
+MCP-эндпоинт: `http://localhost:8090/mcp`
 
 ### Claude Desktop
 
@@ -42,7 +42,7 @@ MCP-эндпоинт: `http://localhost:8000/mcp`
 {
   "mcpServers": {
     "otto": {
-      "url": "http://localhost:8000/mcp"
+      "url": "http://localhost:8090/mcp"
     }
   }
 }
@@ -51,7 +51,7 @@ MCP-эндпоинт: `http://localhost:8000/mcp`
 ### Claude Code
 
 ```bash
-claude mcp add otto http://localhost:8000/mcp
+claude mcp add otto http://localhost:8090/mcp
 ```
 
 После подключения LLM получает три инструмента:
@@ -67,7 +67,7 @@ claude mcp add otto http://localhost:8000/mcp
 ### Статус соединения
 
 ```bash
-curl http://localhost:8000/status
+curl http://localhost:8090/status
 ```
 
 ```json
@@ -81,7 +81,7 @@ curl http://localhost:8000/status
 ### Список команд
 
 ```bash
-curl http://localhost:8000/commands
+curl http://localhost:8090/commands
 ```
 
 ```json
@@ -100,7 +100,7 @@ curl http://localhost:8000/commands
 ### Отправка команды
 
 ```bash
-curl -X POST http://localhost:8000/command/forward
+curl -X POST http://localhost:8090/command/forward
 ```
 
 ```json
